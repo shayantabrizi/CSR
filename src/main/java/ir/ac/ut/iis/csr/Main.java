@@ -38,10 +38,10 @@ public class Main {
         try (PapersMain main = new PapersMain()) {
             main.main("T");
             CSRSimilarityTotalLevel hs = new CSRSimilarityTotalLevel();
-        ir.ac.ut.iis.person.AddSearchers.addBaseline();
-        AddSearchers.addClusterBasedSearchers(hs);
-        AddSearchers.addAggregateSearchersParameterTuning();
-        AddSearchers.addSocialInfluenceParameterTuning();
+            ir.ac.ut.iis.person.AddSearchers.addBaseline();
+            AddSearchers.addClusterBasedSearchers(hs);
+            AddSearchers.addAggregateSearchersParameterTuning();
+            AddSearchers.addSocialInfluenceParameterTuning();
 //        ir.ac.ut.iis.person.AddSearchers.addAggregateSearchers(false);
             retrieve();
         }
@@ -68,12 +68,12 @@ public class Main {
     private static void initializeConfigs() {
         Configs.skipQueries = 0;
         Configs.useSearchCaching = false;
-        Configs.datasetName = "aminer_>2002_new";
-        Configs.database_name = "aminer_>2002_new";
+        Configs.datasetName = "aminer_>2002";
+        Configs.database_name = "aminer_>2002";
         Configs.indexName = "index_15_SymmetricAlpha";
         Configs.clustersFileName = "PPC-1.3";
         Configs.topicsName = "15_SymmetricAlpha";
-        Configs.runNumber = 105;     //29 and 31 for non flat
+        Configs.runNumber = 109;
         {
 //            Configs.ignoreSelfCitations = true;
 //            Configs.useSearchCaching = false;
