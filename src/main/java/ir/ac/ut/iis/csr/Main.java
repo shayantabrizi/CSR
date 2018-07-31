@@ -18,7 +18,7 @@ import org.xml.sax.SAXException;
 
 /**
  *
- * @author GOMROK IRAN
+ * @author Shayan
  */
 public class Main {
 
