@@ -44,14 +44,14 @@ public abstract class SingleSourceValueSource extends GraphValueSource {
             u.resetMeasure();
         }
         GraphNode searcher = hier.getUserNode(query.getSearcher());
-        measureCalculator = getMeasureCalculator(query, searcher);
+        measureCalculator = getMeasureCalculator(searcher);
         float[] measure = searcher.getMeasure(measureCalculator);
         if (measure == null) {
             measureCalculator.calc(hier.getNumberOfWeights(), searcher, hier.getRootNode().getUsers(), hier.getRootNode().usersNum(), (short) 0);
         }
     }
 
-    protected abstract MeasureCalculator getMeasureCalculator(Query query, GraphNode searcher);
+    protected abstract MeasureCalculator getMeasureCalculator(GraphNode searcher);
 
     @Override
     public FunctionValues getValues(Map context, LeafReaderContext readerContext) throws IOException {

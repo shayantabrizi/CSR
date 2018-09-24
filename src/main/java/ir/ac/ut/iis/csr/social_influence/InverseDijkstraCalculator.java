@@ -119,4 +119,9 @@ public class InverseDijkstraCalculator implements MeasureCalculator {
         return node.getMeasure(this);
     }
 
+    @Override
+    public int getSeedsId() {
+        return sourceNode.getId().getId();
+    }
+
 }

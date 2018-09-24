@@ -25,14 +25,22 @@ import java.util.TreeSet;
  */
 public class CSRSimilarityTotalLevel {
 
-    protected short currentFlag = 0;
+    private final double pageRankAlpha;
 
-    protected NextNodeResult nextNode(HierarchyNode currentNode, Set<GraphNode> publishers) {
+    public CSRSimilarityTotalLevel() {
+        this(Configs.pagerankAlpha);
+    }
+
+    public CSRSimilarityTotalLevel(double pageRankAlpha) {
+        this.pageRankAlpha = pageRankAlpha;
+    }
+
+    protected NextNodeResult nextNode(HierarchyNode currentNode, Set<GraphNode> publishers, HierarchyNode searcherNode) {
         NextNodeResult rVale = new NextNodeResult(new TreeSet<>(), new TreeSet<>());
         for (GraphNode user : publishers) {
             HierarchyNode child = currentNode.getChild(user);
 
-            if (child != null && child.getFlag() != 0 && child.getFlag() == currentFlag) {
+            if (child != null && child.isEqualToOrAncestorOf(searcherNode)) {
                 rVale.contained.add(user);
             } else {
                 rVale.notContained.add(user);
@@ -40,15 +48,6 @@ public class CSRSimilarityTotalLevel {
         }
 
         return rVale;
-    }
-
-    public void activeNode(GraphNode searcherUser) {
-        currentFlag += 1;
-        HierarchyNode currentNode = searcherUser.getHierarchyNode();
-        while (currentNode != null) {
-            currentNode.setFlag(currentFlag);
-            currentNode = currentNode.getParent();
-        }
     }
 
     /**
@@ -62,22 +61,22 @@ public class CSRSimilarityTotalLevel {
      * @return
      */
     public double[] CSR(HierarchyNode currentNode, GraphNode searcher, Map<GraphNode, double[]> publishers, Map<GraphNode, double[]> finalScores, Map<Integer, float[]> priors, Integer priorId) {
-        NextNodeResult nextLevel = nextNode(currentNode, publishers.keySet());
+        NextNodeResult nextLevel = nextNode(currentNode, publishers.keySet(), searcher.getHierarchyNode());
         HierarchyNode nextNode = currentNode.getChild(searcher);
 
         double[] total = new double[currentNode.getNumberOfWeights()];
         for (GraphNode notContained : nextLevel.notContained) {
             double[] totalUserProb = publishers.get(notContained);
             if (nextNode != null) {
-                final float[] selfPPR = currentNode.selfPPR(makePPRCalculator(priors, priorId, currentNode));
-                final float[] userPPR = nextNode.userPPR(makePPRCalculator(priors, priorId, nextNode), notContained);
+                final float[] selfPPR = currentNode.selfPPR(makePPRCalculator(priors, priorId, currentNode), pageRankAlpha);
+                final float[] userPPR = nextNode.userPPR(makePPRCalculator(priors, priorId, nextNode), pageRankAlpha, notContained);
 //                System.out.println("UserPPR: " + nextNode.getId() + " " + notContained.getId().getId() + ": " + userPPR[0]);
 
                 for (int t = 0; t < totalUserProb.length; t++) {
                     totalUserProb[t] += Math.log(selfPPR[t]) + Math.log(userPPR[t]);
                 }
             } else {
-                final float[] userPPR = currentNode.userPPR(makePPRCalculator(priors, priorId, currentNode), notContained);
+                final float[] userPPR = currentNode.userPPR(makePPRCalculator(priors, priorId, currentNode), pageRankAlpha, notContained);
 //                System.out.println("UserPPR: " + currentNode.getId() + " " + notContained.getId().getId() + ": " + userPPR[0]);
                 for (int t = 0; t < totalUserProb.length; t++) {
                     totalUserProb[t] += Math.log(userPPR[t]);
@@ -98,7 +97,7 @@ public class CSRSimilarityTotalLevel {
         Map<GraphNode, double[]> containedPublishers = new HashMap<>();
         for (GraphNode contained : nextLevel.contained) {
             final double[] get = publishers.get(contained);
-            final float[] selfPPR = currentNode.selfPPR(makePPRCalculator(priors, priorId, currentNode));
+            final float[] selfPPR = currentNode.selfPPR(makePPRCalculator(priors, priorId, currentNode), pageRankAlpha);
             double[] sc = new double[currentNode.getNumberOfWeights()];
             for (int t = 0; t < sc.length; t++) {
                 sc[t] = get[t] + Math.log(selfPPR[t]);
@@ -115,7 +114,7 @@ public class CSRSimilarityTotalLevel {
     protected PPRCalculator makePPRCalculator(Map<Integer, float[]> priors, int priorId, HierarchyNode currentNode) {
         PPRCalculator pprCalculator = null;
         if (priors != null) {
-            pprCalculator = new ConstantVectorPPR(currentNode.getId(), currentNode.getNumberOfWeights(), priorId, currentNode.getUsers(), priors, Configs.pagerankAlpha);
+            pprCalculator = new ConstantVectorPPR(currentNode.getId(), currentNode.getNumberOfWeights(), priorId, currentNode.getUsers(), priors, pageRankAlpha);
         }
         return pprCalculator;
     }

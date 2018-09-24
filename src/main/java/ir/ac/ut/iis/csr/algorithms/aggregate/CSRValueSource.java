@@ -7,6 +7,7 @@ package ir.ac.ut.iis.csr.algorithms.aggregate;
 
 import ir.ac.ut.iis.csr.csr.CSRSimilarityTotalLevel;
 import ir.ac.ut.iis.person.DatasetMain;
+import ir.ac.ut.iis.person.Main;
 import ir.ac.ut.iis.person.base.Statistic;
 import ir.ac.ut.iis.person.hierarchy.GraphNode;
 import ir.ac.ut.iis.person.hierarchy.Hierarchy;
@@ -56,8 +57,10 @@ public class CSRValueSource extends GraphValueSource {
 //            map = mapCache;
 //        } else {
         searcher = hier.getUserNode(query.getSearcher());
+        if (Main.i % 100 == 99) {
+            hier.getRootNode().pruneMeasures(1000);
+        }
 
-        hs.activeNode(searcher);
 //            map = calcWeights(Integer.parseInt(query.getSearcher()), Main.khodaeiDegree);
 //            mapCache = map;
 //        }

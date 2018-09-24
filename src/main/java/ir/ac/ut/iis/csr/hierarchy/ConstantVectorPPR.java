@@ -62,9 +62,9 @@ public class ConstantVectorPPR extends PPRCalculator {
     @Override
     public int hashCode() {
         if (numOfWeights > 1) {
-            return Objects.hash(topicNodeId , 1);
+            return Objects.hash(topicNodeId , 1, alpha);
         } else {
-            return Objects.hash(topicNodeId, uniqueId);
+            return Objects.hash(topicNodeId, uniqueId, alpha);
         }
     }
 
@@ -81,6 +81,9 @@ public class ConstantVectorPPR extends PPRCalculator {
         }
         final ConstantVectorPPR other = (ConstantVectorPPR) obj;
         if (topicNodeId != other.topicNodeId) {
+            return false;
+        }
+        if (alpha != other.alpha) {
             return false;
         }
 

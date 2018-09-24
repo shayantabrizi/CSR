@@ -37,7 +37,7 @@ public class Main {
         Configs.useCachedPPRs = false;
         try (PapersMain main = new PapersMain()) {
             main.main("T");
-            CSRSimilarityTotalLevel hs = new CSRSimilarityTotalLevel();
+            CSRSimilarityTotalLevel hs = new CSRSimilarityTotalLevel(Configs.pagerankAlpha);
             ir.ac.ut.iis.person.AddSearchers.addBaseline();
             AddSearchers.addClusterBasedSearchers(hs);
             AddSearchers.addAggregateSearchersParameterTuning();
@@ -55,9 +55,9 @@ public class Main {
         try (PapersMain main = new PapersMain()) {
             main.main("CP");
             final Hierarchy<?> loadHierarchy = DatasetMain.getInstance().getHierarchy();
-            PageRankCacher pageRankCacher = new PageRankCacher(loadHierarchy, Configs.database_name, String.valueOf(loadHierarchy.getNumberOfWeights() + "_" + Configs.pagerankAlpha));
+            PageRankCacher pageRankCacher = new PageRankCacher(loadHierarchy, Configs.database_name, String.valueOf(loadHierarchy.getNumberOfWeights() + "_" + Configs.pagerankAlpha), Configs.pagerankAlpha);
             {
-                pageRankCacher.cache();
+                pageRankCacher.cache(Configs.pagerankAlpha);
             }
 //        {
 //        pageRankCacher.cacheTopic(loadHierarchy, Configs.datasetRoot + "topics/15-SymmetricAlpha/tempTopics", 15);
@@ -73,7 +73,7 @@ public class Main {
         Configs.indexName = "index_15_SymmetricAlpha";
         Configs.clustersFileName = "PPC-1.3";
         Configs.topicsName = "15_SymmetricAlpha";
-        Configs.runNumber = 109;
+        Configs.runNumber = 110;
         {
 //            Configs.ignoreSelfCitations = true;
 //            Configs.useSearchCaching = false;

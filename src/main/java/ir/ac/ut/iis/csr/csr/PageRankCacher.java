@@ -39,8 +39,9 @@ public class PageRankCacher {
     private final PreparedStatement selfInsertStatement;
     private final String tableNameSuffix;
     private final Hierarchy<?> hier;
+    private final double pageRankAlpha;
 
-    public PageRankCacher(Hierarchy<?> hier, String databaseName, String tableNameSuffix) {
+    public PageRankCacher(Hierarchy<?> hier, String databaseName, String tableNameSuffix, double pageRankAlpha) {
         this.tableNameSuffix = tableNameSuffix;
         this.conn = MySQLConnector.connect(databaseName);
         try {
@@ -58,10 +59,11 @@ public class PageRankCacher {
             throw new RuntimeException();
         }
         this.hier = hier;
+        this.pageRankAlpha = pageRankAlpha;
     }
 
-    public void cache() {
-        cacheHierarchyNode(hier.getRootNode());
+    public void cache(double pagerankAlpha) {
+        cacheHierarchyNode(hier.getRootNode(), pagerankAlpha);
     }
 
 //    public void loadPPRs() {
@@ -87,7 +89,7 @@ public class PageRankCacher {
 
     boolean check = true;
 
-    private void cacheHierarchyNode(HierarchyNode hn) {
+    private void cacheHierarchyNode(HierarchyNode hn, double pagerankAlpha) {
 //        if (hn.getParent() == null || !(hn.getParent().usersNum() > 100 * hn.usersNum())) {
         if (hn.getParent() != null) {
             StringBuilder sb = new StringBuilder();
@@ -104,14 +106,14 @@ public class PageRankCacher {
             System.out.println(sb.toString() + " " + hn.getLevel() + " " + hn.getParent().usersNum());
             if (hn.usersNum() > 15_000) {
                 if (check) {
-                    final float[] selfPPR = hn.selfPPR();
+                    final float[] selfPPR = hn.selfPPR(pagerankAlpha);
                     store(selfPPR, hn.getParent().getUsers(), hn.getId());
                 }
             }
         }
         if (hn.usersNum() > 15_000) {
             for (HierarchyNode value : hn.getChildren().values()) {
-                cacheHierarchyNode(value);
+                cacheHierarchyNode(value, pagerankAlpha);
             }
         }
     }
@@ -149,7 +151,7 @@ public class PageRankCacher {
                     public void accept(MeasureCalculator a, float[] b) {
                         try {
                             PPRCalculator aa = (PPRCalculator) a;
-                            PreparedStatement get = userInsertStatements.get(aa.getTopicNodeId());
+                            PreparedStatement get = userInsertStatements.get(aa.getSeedsId());
                             if (get == null) {
                                 conn.prepareStatement("DROP TABLE IF EXISTS `PPR_user_" + tableNameSuffix + "_" + a + Configs.databaseTablesPostfix + "`").executeUpdate();
                                 conn.prepareStatement("CREATE TABLE `PPR_user_" + tableNameSuffix + "_" + a + Configs.databaseTablesPostfix + "` ("
@@ -157,8 +159,8 @@ public class PageRankCacher {
                                         + "  `PPR` varchar(256) DEFAULT NULL,"
                                         + "  PRIMARY KEY (`node_id`)"
                                         + ") ENGINE=InnoDB DEFAULT CHARSET=utf8;").executeUpdate();
-                                get = conn.prepareStatement("insert into `PPR_user_" + tableNameSuffix + "_" + aa.getTopicNodeId() + Configs.databaseTablesPostfix + "` values(?,?)");
-                                userInsertStatements.put(aa.getTopicNodeId(), get);
+                                get = conn.prepareStatement("insert into `PPR_user_" + tableNameSuffix + "_" + aa.getSeedsId()+ Configs.databaseTablesPostfix + "` values(?,?)");
+                                userInsertStatements.put(aa.getSeedsId(), get);
                             }
                             get.setInt(1, n.getId().getId());
                             get.setString(2, convertToString(b));
@@ -180,7 +182,7 @@ public class PageRankCacher {
     private void cacheHierarchyNodeTopical(HierarchyNode hn, Set<GraphNode> topic, short topicId) {
         float[] selfPPR = new float[hn.getNumberOfWeights()];
         for (GraphNode t : topic) {
-            float[] PPR = new UniformPPR(topicId, hn.getUsers(), hn.usersNum(), Configs.pagerankAlpha).calc(hier.getNumberOfWeights(), t, hn.getUsers(), hn.usersNum(), (short) 0);
+            float[] PPR = new UniformPPR(topicId, hn.getUsers(), hn.usersNum(), pageRankAlpha).calc(hier.getNumberOfWeights(), t, hn.getUsers(), hn.usersNum(), (short) 0);
             for (int i = 0; i < PPR.length; i++) {
                 selfPPR[i] += PPR[i];
             }

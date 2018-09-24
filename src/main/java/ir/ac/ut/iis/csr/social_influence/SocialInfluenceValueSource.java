@@ -8,7 +8,6 @@ package ir.ac.ut.iis.csr.social_influence;
 import ir.ac.ut.iis.person.hierarchy.GraphNode;
 import ir.ac.ut.iis.person.hierarchy.Hierarchy;
 import ir.ac.ut.iis.person.hierarchy.MeasureCalculator;
-import ir.ac.ut.iis.person.query.Query;
 import ir.ac.ut.iis.csr.algorithms.aggregate.SingleSourceValueSource;
 
 /**
@@ -29,7 +28,7 @@ public class SocialInfluenceValueSource extends SingleSourceValueSource {
     }
 
     @Override
-    protected MeasureCalculator getMeasureCalculator(Query query, GraphNode searcher) {
+    protected MeasureCalculator getMeasureCalculator(GraphNode searcher) {
         return new InverseDijkstraCalculator(searcher, considerWeights, alpha, gamma);
     }
 

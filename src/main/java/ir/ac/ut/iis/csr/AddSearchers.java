@@ -62,7 +62,7 @@ public class AddSearchers {
         retriever.addSearcher(new AggregateSearcher(myValueSource, DatasetMain.getInstance().getIndexSearcher(), "CSR-" + myValueSource.getName(), ir.ac.ut.iis.person.AddSearchers.getBaseSimilarity(), ir.ac.ut.iis.person.AddSearchers.getQueryConverter(), 1f, 1f));
 
         Hierarchy<?> hier2 = DatasetMain.getInstance().loadHierarchy(Configs.datasetRoot + Configs.graphFile, Configs.datasetRoot + "clusters/" + Configs.clustersFileName + ".tree", Configs.clustersFileName, false, false, false, false);
-        PPRValueSource pprValueSource = new PPRValueSource(hier2, hier2.getNumberOfWeights() - 1, CSRValueSource.ScoreMergeStrategy.SUM);
+        PPRValueSource pprValueSource = new PPRValueSource(hier2, hier2.getNumberOfWeights() - 1, CSRValueSource.ScoreMergeStrategy.SUM, Configs.pagerankAlpha);
         retriever.addSearcher(new AggregateSearcher(pprValueSource, DatasetMain.getInstance().getIndexSearcher(), "PPR-" + pprValueSource.getName(), ir.ac.ut.iis.person.AddSearchers.getBaseSimilarity(), ir.ac.ut.iis.person.AddSearchers.getQueryConverter(), 1f, 1f));
 
         Hierarchy<?> hier3 = DatasetMain.getInstance().loadHierarchy(Configs.datasetRoot + Configs.graphFile, Configs.datasetRoot + "clusters/" + Configs.clustersFileName + ".tree", Configs.clustersFileName, false, true, false, false);
