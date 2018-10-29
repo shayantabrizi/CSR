@@ -40,10 +40,14 @@ public abstract class SingleSourceValueSource extends GraphValueSource {
             return;
         }
         queryCache = query;
+        initialize(query.getSearcher());
+    }
+
+    private void initialize(int s) {
         for (GraphNode u : hier.getRootNode().getUsers()) {
             u.resetMeasure();
         }
-        GraphNode searcher = hier.getUserNode(query.getSearcher());
+        GraphNode searcher = hier.getUserNode(s);
         measureCalculator = getMeasureCalculator(searcher);
         float[] measure = searcher.getMeasure(measureCalculator);
         if (measure == null) {

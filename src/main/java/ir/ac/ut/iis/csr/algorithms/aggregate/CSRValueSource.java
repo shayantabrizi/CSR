@@ -53,10 +53,14 @@ public class CSRValueSource extends GraphValueSource {
 
     @Override
     public void initialize(Query query) {
-//        if (query.equals(queryCache)) {
+        initialize(query.getSearcher());
+    }
+
+    private void initialize(int s) {
+        //        if (query.equals(queryCache)) {
 //            map = mapCache;
 //        } else {
-        searcher = hier.getUserNode(query.getSearcher());
+        searcher = hier.getUserNode(s);
         if (Main.i % 100 == 99) {
             hier.getRootNode().pruneMeasures(1000);
         }

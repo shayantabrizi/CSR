@@ -7,6 +7,7 @@ import ir.ac.ut.iis.person.PapersMain;
 import ir.ac.ut.iis.person.hierarchy.Hierarchy;
 import ir.ac.ut.iis.csr.csr.PageRankCacher;
 import ir.ac.ut.iis.csr.csr.CSRSimilarityTotalLevel;
+import ir.ac.ut.iis.person.evaluation.person.PERSONEvaluator;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import javax.xml.parsers.ParserConfigurationException;
@@ -25,6 +26,7 @@ public class Main {
     public static void main(String[] args) throws FileNotFoundException, CorruptIndexException, LockObtainFailedException, LockObtainFailedException, IOException, DOMException, ParserConfigurationException, SAXException, QueryNodeException, FileNotFoundException, FileNotFoundException, IOException {
         initializeConfigs();
         experiment();        // Use with -Xmx4000m
+//        createMethodBasedJudgments();
 //        cachePageRanks();
     }
 
@@ -36,7 +38,7 @@ public class Main {
         Configs.ignoreTopLevelCluster = true;
         Configs.useCachedPPRs = false;
         try (PapersMain main = new PapersMain()) {
-            main.main("T");
+            main.main("experiment");
             CSRSimilarityTotalLevel hs = new CSRSimilarityTotalLevel(Configs.pagerankAlpha);
             ir.ac.ut.iis.person.AddSearchers.addBaseline();
             AddSearchers.addClusterBasedSearchers(hs);
@@ -65,6 +67,22 @@ public class Main {
         }
     }
 
+    private static void createMethodBasedJudgments() {
+        Configs.runStage = Configs.RunStage.CREATE_METHOD_BASED_JUDGMENTS;
+        Configs.evaluator = new PERSONEvaluator();
+        Configs.queryCount = 10_000;
+        Configs.baseSimilarityName = "LM";
+        Configs.lmDirichletMu = 100;
+        Configs.useTFIDFWeightingInCampos = false;
+        Configs.onlyQueriesWhoseAuthorHasMoreThan_THIS_Papers = 1;
+        ir.ac.ut.iis.person.AddSearchers.reinitialize();
+        try (PapersMain main = new PapersMain()) {
+            main.main("createMethodBasedJudgments");
+            AddSearchers.addMethodBasedEvaluatorSearchers();
+            retrieve();
+        }
+    }
+
     private static void initializeConfigs() {
         Configs.skipQueries = 0;
         Configs.useSearchCaching = false;
@@ -73,12 +91,11 @@ public class Main {
         Configs.indexName = "index_15_SymmetricAlpha";
         Configs.clustersFileName = "PPC-1.3";
         Configs.topicsName = "15_SymmetricAlpha";
-        Configs.runNumber = 110;
+        Configs.runNumber = 129;
         {
 //            Configs.ignoreSelfCitations = true;
 //            Configs.useSearchCaching = false;
         }
         ir.ac.ut.iis.person.AddSearchers.reinitialize();
     }
-
 }
