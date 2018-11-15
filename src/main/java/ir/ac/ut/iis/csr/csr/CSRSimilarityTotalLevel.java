@@ -58,6 +58,8 @@ public class CSRSimilarityTotalLevel {
      * @param searcher
      * @param publishers
      * @param finalScores
+     * @param priors
+     * @param priorId
      * @return
      */
     public double[] CSR(HierarchyNode currentNode, GraphNode searcher, Map<GraphNode, double[]> publishers, Map<GraphNode, double[]> finalScores, Map<Integer, float[]> priors, Integer priorId) {

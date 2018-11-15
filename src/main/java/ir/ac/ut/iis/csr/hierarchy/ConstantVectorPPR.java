@@ -49,7 +49,7 @@ public class ConstantVectorPPR extends PPRCalculator {
         }
         for (MyEntry u : priors) {
             for (int i = 0; i < numOfWeights; i++) {
-                u.graphNode.getTmpArray()[i] = (float) (u.graphNode.getTmpArray()[i] + (alpha + zeroDegrees[i]) * u.prior[i] / sumOfPriors[i]);
+                u.graphNode.getTmpArray()[i] = (float) (u.graphNode.getTmpArray()[i] + (alpha + zeroDegrees[i] * (1 - alpha)) * u.prior[i] / sumOfPriors[i]);
             }
         }
     }
@@ -62,7 +62,7 @@ public class ConstantVectorPPR extends PPRCalculator {
     @Override
     public int hashCode() {
         if (numOfWeights > 1) {
-            return Objects.hash(topicNodeId , 1, alpha);
+            return Objects.hash(topicNodeId, 1, alpha);
         } else {
             return Objects.hash(topicNodeId, uniqueId, alpha);
         }

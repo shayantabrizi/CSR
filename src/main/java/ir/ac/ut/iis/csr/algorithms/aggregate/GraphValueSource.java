@@ -112,7 +112,7 @@ public abstract class GraphValueSource extends MyValueSource {
     public Hierarchy<?> getHierarchy() {
         return hier;
     }
-    
+
     @Override
     public String getName() {
         return mergeStrategy.name();
