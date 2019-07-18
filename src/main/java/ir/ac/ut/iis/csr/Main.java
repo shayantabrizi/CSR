@@ -8,10 +8,27 @@ import ir.ac.ut.iis.person.hierarchy.Hierarchy;
 import ir.ac.ut.iis.csr.csr.PageRankCacher;
 import ir.ac.ut.iis.csr.csr.CSRSimilarityTotalLevel;
 import ir.ac.ut.iis.person.evaluation.person.PERSONEvaluator;
+import ir.ac.ut.iis.person.hierarchy.GraphNode;
+import ir.ac.ut.iis.person.hierarchy.HierarchyNode;
+import ir.ac.ut.iis.person.hierarchy.PPRLoader;
+import ir.ac.ut.iis.person.hierarchy.UniformPPR;
+import it.unimi.dsi.fastutil.floats.FloatArrayList;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import java.io.BufferedInputStream;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.sql.Array;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Scanner;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.xml.parsers.ParserConfigurationException;
 import org.apache.lucene.index.CorruptIndexException;
+import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
 import org.apache.lucene.store.LockObtainFailedException;
 import org.w3c.dom.DOMException;
@@ -26,24 +43,28 @@ public class Main {
     public static void main(String[] args) throws FileNotFoundException, CorruptIndexException, LockObtainFailedException, LockObtainFailedException, IOException, DOMException, ParserConfigurationException, SAXException, QueryNodeException, FileNotFoundException, FileNotFoundException, IOException {
         initializeConfigs();
         experiment();        // Use with -Xmx4000m
+//        PPRLoader.load("PPRs_kol.txt");
 //        createMethodBasedJudgments();
 //        cachePageRanks();
     }
 
     public static void experiment() {
+        Configs.multiThreaded = false;
         Configs.baseSimilarityName = "MyLM";
         Configs.lmDirichletMu = 400;
         ir.ac.ut.iis.person.AddSearchers.reinitialize();
         Configs.loadGraph = true;
         Configs.ignoreTopLevelCluster = true;
         Configs.useCachedPPRs = false;
+        Configs.pruneThreshold = -1;
+        Configs.queryCount = 500;
         try (PapersMain main = new PapersMain()) {
             main.main("experiment");
             CSRSimilarityTotalLevel hs = new CSRSimilarityTotalLevel(Configs.pagerankAlpha);
-            ir.ac.ut.iis.person.AddSearchers.addBaseline();
+//            ir.ac.ut.iis.person.AddSearchers.addBaseline();
             AddSearchers.addClusterBasedSearchers(hs);
-            AddSearchers.addAggregateSearchersParameterTuning();
-            AddSearchers.addSocialInfluenceParameterTuning();
+//            AddSearchers.addAggregateSearchersParameterTuning();
+//            AddSearchers.addSocialInfluenceParameterTuning();
 //        ir.ac.ut.iis.person.AddSearchers.addAggregateSearchers(false);
             retrieve();
         }
@@ -51,13 +72,15 @@ public class Main {
 
     private static void cachePageRanks() {
         Configs.loadGraph = true;
+        Configs.multiThreaded = false;
 //        {
-        Configs.graphFile = "topics/" + Configs.topicsName + "/authors_giant_graph_topics7.csv";
+//        Configs.graphFile = "topics/" + Configs.topicsName + "/authors_giant_graph_topics7.csv";
 //        }
         try (PapersMain main = new PapersMain()) {
             main.main("CP");
-            final Hierarchy<?> loadHierarchy = DatasetMain.getInstance().getHierarchy();
-            PageRankCacher pageRankCacher = new PageRankCacher(loadHierarchy, Configs.database_name, String.valueOf(loadHierarchy.getNumberOfWeights() + "_" + Configs.pagerankAlpha), Configs.pagerankAlpha);
+//            final Hierarchy<?> hierarchy = DatasetMain.getInstance().getHierarchy();
+            Hierarchy<?> hierarchy = DatasetMain.getInstance().loadHierarchy(Configs.datasetRoot + Configs.graphFile, Configs.datasetRoot + "clusters/" + Configs.clustersFileName + ".tree", Configs.clustersFileName, false, true, false, false);
+            PageRankCacher pageRankCacher = new PageRankCacher(hierarchy, Configs.database_name, String.valueOf(hierarchy.getNumberOfWeights() + "_" + Configs.pagerankAlpha), Configs.pagerankAlpha);
             {
                 pageRankCacher.cache(Configs.pagerankAlpha);
             }
@@ -84,14 +107,14 @@ public class Main {
     }
 
     private static void initializeConfigs() {
-        Configs.skipQueries = 0;
+        Configs.skipQueries = 50;
         Configs.useSearchCaching = false;
         Configs.datasetName = "aminer_>2002";
-        Configs.database_name = "aminer_>2002";
-        Configs.indexName = "index_15_SymmetricAlpha";
+        Configs.database_name = "aminer_>2002_2";
+        Configs.indexName = "index_PPR";
         Configs.clustersFileName = "PPC-1.3";
-        Configs.topicsName = "15_SymmetricAlpha";
-        Configs.runNumber = 129;
+        Configs.topicsName = "PPR";
+        Configs.runNumber = 200;
         {
 //            Configs.ignoreSelfCitations = true;
 //            Configs.useSearchCaching = false;

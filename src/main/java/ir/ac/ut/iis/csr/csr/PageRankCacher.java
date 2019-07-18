@@ -51,7 +51,7 @@ public class PageRankCacher {
                     + "  `hierarchyNode_id` int(11) NOT NULL,"
                     + "  `PPR` varchar(256) DEFAULT NULL,"
                     + "  PRIMARY KEY (`hierarchyNode_id`)"
-                    + ") ENGINE=InnoDB DEFAULT CHARSET=utf8;").executeUpdate();
+                    + ") ENGINE = MyISAM PACK_KEYS = 1 ROW_FORMAT = FIXED DEFAULT CHARSET=utf8;").executeUpdate();
             conn.commit();
             selfInsertStatement = conn.prepareStatement("insert into `PPR_self_" + tableNameSuffix + Configs.databaseTablesPostfix + "` values(?,?)");
         } catch (SQLException ex) {
@@ -95,27 +95,25 @@ public class PageRankCacher {
             StringBuilder sb = new StringBuilder();
             if (hn.getParent() != null) {
                 HierarchyNode curr = hn;
-                while (curr.getId() != -1) {
+                while (curr.getId() != Integer.MIN_VALUE) {
                     sb.insert(0, ":" + curr.getId());
                     curr = curr.getParent();
                 }
             }
-//            if (sb.toString().equals(":2:5:9:24:213:224:259:261:725:1233:1255:1717:2840:2842")) {
-//                check = true;
-//            }
             System.out.println(sb.toString() + " " + hn.getLevel() + " " + hn.getParent().usersNum());
-            if (hn.usersNum() > 15_000) {
+//            if (hn.usersNum() > 5000) {
                 if (check) {
-                    final float[] selfPPR = hn.selfPPR(pagerankAlpha);
-                    store(selfPPR, hn.getParent().getUsers(), hn.getId());
+                    final float selfPPR = hn.selfPPR(pagerankAlpha);
+                    store(selfPPR, hn.getParent().getUsers(), hn.getId(),
+                            (hn.getParent() == null || hn.getParent().usersNum() >= 300) && hn.usersNum() >= 10);
                 }
-            }
+//            }
         }
-        if (hn.usersNum() > 15_000) {
+//        if (hn.usersNum() > 5000) {
             for (HierarchyNode value : hn.getChildren().values()) {
                 cacheHierarchyNode(value, pagerankAlpha);
             }
-        }
+//        }
     }
 
     public void cacheTopic(Hierarchy<?> hier, String clustersFolder, int numberOfClusters) {
@@ -134,42 +132,40 @@ public class PageRankCacher {
         }
     }
 
-    protected void store(final float[] selfPPR, Iterable<GraphNode> users, int id) throws RuntimeException {
-        String s = convertToString(selfPPR);
+    protected void store(final float selfPPR, Iterable<GraphNode> users, int id, boolean storeUserPPRs) throws RuntimeException {
+        String s = String.valueOf(selfPPR);
 
         try {
             selfInsertStatement.setInt(1, id);
             selfInsertStatement.setString(2, s);
             selfInsertStatement.executeUpdate();
             for (GraphNode n : users) {
-                if (n.getMeasure().size() > 1) {
-                    throw new RuntimeException();
-                }
-                n.getMeasure().forEach(new BiConsumer<MeasureCalculator, float[]>() {
-
-                    @Override
-                    public void accept(MeasureCalculator a, float[] b) {
+                if (storeUserPPRs) {
+                    if (n.getMeasure().size() > 1) {
+                        throw new RuntimeException();
+                    }
+                    n.getMeasure().forEach((a, b) -> {
                         try {
                             PPRCalculator aa = (PPRCalculator) a;
                             PreparedStatement get = userInsertStatements.get(aa.getSeedsId());
                             if (get == null) {
                                 conn.prepareStatement("DROP TABLE IF EXISTS `PPR_user_" + tableNameSuffix + "_" + a + Configs.databaseTablesPostfix + "`").executeUpdate();
                                 conn.prepareStatement("CREATE TABLE `PPR_user_" + tableNameSuffix + "_" + a + Configs.databaseTablesPostfix + "` ("
-                                        + "  `node_id` char(10) NOT NULL,"
+                                        + "  `node_id` int,"
                                         + "  `PPR` varchar(256) DEFAULT NULL,"
                                         + "  PRIMARY KEY (`node_id`)"
-                                        + ") ENGINE=InnoDB DEFAULT CHARSET=utf8;").executeUpdate();
-                                get = conn.prepareStatement("insert into `PPR_user_" + tableNameSuffix + "_" + aa.getSeedsId()+ Configs.databaseTablesPostfix + "` values(?,?)");
+                                        + ") ENGINE = MyISAM PACK_KEYS = 1 ROW_FORMAT = FIXED DEFAULT CHARSET=utf8;").executeUpdate();
+                                get = conn.prepareStatement("insert into `PPR_user_" + tableNameSuffix + "_" + aa.getSeedsId() + Configs.databaseTablesPostfix + "` values(?,?)");
                                 userInsertStatements.put(aa.getSeedsId(), get);
                             }
                             get.setInt(1, n.getId().getId());
-                            get.setString(2, convertToString(b));
+                            get.setString(2, String.valueOf(b));
                             get.executeUpdate();
                         } catch (SQLException ex) {
                             Logger.getLogger(PageRankCacher.class.getName()).log(Level.SEVERE, null, ex);
                         }
-                    }
-                });
+                    });
+                }
                 n.getMeasure().clear();
             }
             conn.commit();
@@ -180,14 +176,12 @@ public class PageRankCacher {
     }
 
     private void cacheHierarchyNodeTopical(HierarchyNode hn, Set<GraphNode> topic, short topicId) {
-        float[] selfPPR = new float[hn.getNumberOfWeights()];
+        float selfPPR = 0;
         for (GraphNode t : topic) {
-            float[] PPR = new UniformPPR(topicId, hn.getUsers(), hn.usersNum(), pageRankAlpha).calc(hier.getNumberOfWeights(), t, hn.getUsers(), hn.usersNum(), (short) 0);
-            for (int i = 0; i < PPR.length; i++) {
-                selfPPR[i] += PPR[i];
-            }
+            float PPR = new UniformPPR(topicId, hn.getUsers(), hn.usersNum(), pageRankAlpha).calc(hier.getNumberOfWeights(), t, hn.getUsers(), hn.usersNum(), (short) 0);
+            selfPPR += PPR;
         }
-        store(selfPPR, hn.getUsers(), topicId);
+        store(selfPPR, hn.getUsers(), topicId, true);
     }
 
     protected String convertToString(final float[] selfPPR) {

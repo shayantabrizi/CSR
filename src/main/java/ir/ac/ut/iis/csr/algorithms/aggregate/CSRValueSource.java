@@ -12,13 +12,12 @@ import ir.ac.ut.iis.person.Main;
 import ir.ac.ut.iis.person.base.Statistic;
 import ir.ac.ut.iis.person.hierarchy.GraphNode;
 import ir.ac.ut.iis.person.hierarchy.Hierarchy;
+import ir.ac.ut.iis.person.paper.PapersRetriever;
 import ir.ac.ut.iis.person.query.Query;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.apache.lucene.index.LeafReaderContext;
 import org.apache.lucene.queries.function.FunctionValues;
 
@@ -61,6 +60,16 @@ public class CSRValueSource extends GraphValueSource {
         //        if (query.equals(queryCache)) {
 //            map = mapCache;
 //        } else {
+//        if (searcher != null) {
+//            HierarchyNode hierarchyNode = searcher.getHierarchyNode();
+//            while (hierarchyNode.usersNum() < 0) {
+//                HierarchyNode hn = hierarchyNode;
+//                hn.getParent().getUsers().forEach(user -> {
+//                    user.getMeasure().remove(new UniformPPR(hn.getId(), hn.getUsers(), hn.usersNum(), hs.getPageRankAlpha()));
+//                });
+//                hierarchyNode = hierarchyNode.getParent();
+//            }
+//        }
         searcher = hier.getUserNode(s);
         if (Main.i % 100 == 99) {
             hier.getRootNode().pruneMeasures(Configs.pruneThreshold);
@@ -98,42 +107,48 @@ public class CSRValueSource extends GraphValueSource {
 
             @Override
             public float floatVal(int doc) {
-                String[] authors;
-                try {
-//                    System.out.println((readerContext.docBase + doc) + " " + doc);
-                    authors = readerContext.reader().document(doc).get("authors").split(" ");
-                } catch (IOException ex) {
-                    Logger.getLogger(CSRValueSource.class.getName()).log(Level.SEVERE, null, ex);
-                    throw new RuntimeException();
-                }
-
-                Map<GraphNode, double[]> finalScores = new HashMap<>();
-                if (check) {
-                    authors = new String[hier.getUserNodeMapping().size()];
-                    int t = 0;
-                    for (Integer k : hier.getUserNodeMapping().keySet()) {
-                        authors[t] = k.toString();
-                        t++;
-                    }
-                }
+//                String[] authors;
+////                Map<Integer, Map<Integer, Float>> map = null;
+//                try {
+////                    System.out.println((readerContext.docBase + doc) + " " + doc);
+//                    authors = readerContext.reader().document(doc).get("authors").split(" ");
+////                    try (ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(readerContext.reader().document(doc).getBinaryValue("pprs").bytes))) {
+////                        map = (Map<Integer, Map<Integer, Float>>) in.readObject();
+////                    } catch (IOException | ClassNotFoundException ex) {
+////                        Logger.getLogger(TopicsValueSource.class.getName()).log(Level.SEVERE, null, ex);
+////                        throw new RuntimeException();
+////                    }
+//                } catch (IOException ex) {
+//                    Logger.getLogger(CSRValueSource.class.getName()).log(Level.SEVERE, null, ex);
+//                    throw new RuntimeException();
+//                }
+//                hs.map = map;
+                Map<GraphNode, Double> finalScores = new HashMap<>();
+                final String[] authors = PapersRetriever.authors[readerContext.docBase + doc];
+//                if (check) {
+//                    authors = new String[hier.getUserNodeMapping().size()];
+//                    int t = 0;
+//                    for (Integer k : hier.getUserNodeMapping().keySet()) {
+//                        authors[t] = k.toString();
+//                        t++;
+//                    }
+//                }
                 GraphNode firstAuthor = calcScores(hs, hier, searcher, authors, finalScores, mergeStrategy, priors, priorId);
                 if (check) {
                     double sum = 0;
-                    for (Map.Entry<GraphNode, double[]> e : finalScores.entrySet()) {
-                        sum += e.getValue()[0];
+                    for (Map.Entry<GraphNode, Double> e : finalScores.entrySet()) {
+                        sum += e.getValue();
                     }
                     System.out.println("CSR Sum=" + sum);
                     check = false;
                 }
 
-                final double[] normalizedScore = mergeScores(mergeStrategy, finalScores.values(), finalScores.get(firstAuthor));
-                for (int i = 0; i < normalizedScore.length; i++) {
-                    normalizedScore[i] = normalizedScore[i] * alpha + 1. / DatasetMain.getInstance().getIndexReader().numDocs() * (1 - alpha);
-                }
+                double normalizedScore = mergeScores(mergeStrategy, finalScores.values(), finalScores.get(firstAuthor));
+                normalizedScore = normalizedScore * alpha + 1. / DatasetMain.getInstance().getIndexReader().numDocs() * (1 - alpha);
 
 //                System.out.println(normalizedScore + " " + Math.log(normalizedScore));
-                statisticsMap.get(getName()).add(Math.log(normalizedScore[graphId]));
-                return (float) Math.log(normalizedScore[graphId]);
+                statisticsMap.get(getName()).add(Math.log(normalizedScore));
+                return (float) Math.log(normalizedScore);
             }
 
             @Override
@@ -163,35 +178,27 @@ public class CSRValueSource extends GraphValueSource {
         return super.getName() + "-" + alpha;
     }
 
-    public static double[] mergeScores(ScoreMergeStrategy mergeStrategy, Collection<double[]> scores, double[] firstScore) {
-        double[] score = new double[firstScore.length];
+    public static double mergeScores(ScoreMergeStrategy mergeStrategy, Collection<Double> scores, double firstScore) {
+        double score = 0;
         switch (mergeStrategy) {
             case FIRST_ONLY:
                 return firstScore;
             case SUM:
-                for (double[] d : scores) {
-                    for (int t = 0; t < firstScore.length; t++) {
-                        score[t] += d[t];
-                    }
+                for (double d : scores) {
+                    score += d;
                 }
                 return score;
             case AVG:
                 int count = 0;
-                for (double[] d : scores) {
-                    for (int t = 0; t < firstScore.length; t++) {
-                        score[t] += d[t];
-                    }
+                for (double d : scores) {
+                    score += d;
                     count++;
                 }
-                for (int t = 0; t < firstScore.length; t++) {
-                    score[t] /= count;
-                }
+                score /= count;
                 return score;
             case MAX:
-                for (double[] d : scores) {
-                    for (int t = 0; t < firstScore.length; t++) {
-                        score[t] = Math.max(score[t], d[t]);
-                    }
+                for (double d : scores) {
+                    score = Math.max(score, d);
                 }
                 return score;
             default:
@@ -204,8 +211,8 @@ public class CSRValueSource extends GraphValueSource {
         return hier;
     }
 
-    public static GraphNode calcScores(CSRSimilarityTotalLevel hs, Hierarchy<?> hier, GraphNode searcher, final String[] authors, Map<GraphNode, double[]> finalScores, ScoreMergeStrategy mergeStrategy, Map<Integer, float[]> priors, Integer priorId) {
-        Map<GraphNode, double[]> publishers = new HashMap<>();
+    public static GraphNode calcScores(CSRSimilarityTotalLevel hs, Hierarchy<?> hier, GraphNode searcher, final String[] authors, Map<GraphNode, Double> finalScores, ScoreMergeStrategy mergeStrategy, Map<Integer, float[]> priors, Integer priorId) {
+        Map<GraphNode, Double> publishers = new HashMap<>();
         GraphNode firstAuthor = null;
         for (String a : authors) {
             final GraphNode userNode = hier.getUserNode(Integer.parseInt(a));
@@ -213,7 +220,7 @@ public class CSRValueSource extends GraphValueSource {
             if (firstAuthor == null) {
                 firstAuthor = userNode;
             }
-            publishers.put(userNode, new double[hier.getNumberOfWeights()]);
+            publishers.put(userNode, 0.);
             if (mergeStrategy.equals(ScoreMergeStrategy.FIRST_ONLY)) {
                 break;
             }

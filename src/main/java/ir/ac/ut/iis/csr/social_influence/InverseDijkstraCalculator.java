@@ -59,9 +59,9 @@ public class InverseDijkstraCalculator implements MeasureCalculator {
     }
 
     @Override
-    public float[] calc(int numOfWeights, GraphNode node, Iterable<GraphNode> parent, int parentSize, short level) {
-        float[] get = node.getMeasure(this);
-        if (get != null) {
+    public float calc(int numOfWeights, GraphNode node, Iterable<GraphNode> parent, int parentSize, short level) {
+        float get = node.getMeasure(this);
+        if (get != -1) {
             return get;
         }
 
@@ -112,10 +112,10 @@ public class InverseDijkstraCalculator implements MeasureCalculator {
             }
         }
         for (GraphNode u : parent) {
-            u.getMeasure().put(this, new float[]{(float) ((1 / (entryMap.get(u).getPriority())) / max)});
+            u.getMeasure().put(this, (float) ((1 / (entryMap.get(u).getPriority())) / max));
         }
-        sourceNode.getMeasure().put(this, new float[]{(float) alpha});
-        System.out.println("Dijkstra: " + this + " " + node.getMeasure(this)[0]);
+        sourceNode.getMeasure().put(this, (float) alpha);
+        System.out.println("Dijkstra: " + this + " " + node.getMeasure(this));
         return node.getMeasure(this);
     }
 

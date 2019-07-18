@@ -49,8 +49,8 @@ public abstract class SingleSourceValueSource extends GraphValueSource {
         }
         GraphNode searcher = hier.getUserNode(s);
         measureCalculator = getMeasureCalculator(searcher);
-        float[] measure = searcher.getMeasure(measureCalculator);
-        if (measure == null) {
+        float measure = searcher.getMeasure(measureCalculator);
+        if (measure == -1) {
             measureCalculator.calc(hier.getNumberOfWeights(), searcher, hier.getRootNode().getUsers(), hier.getRootNode().usersNum(), (short) 0);
         }
     }
@@ -99,11 +99,8 @@ public abstract class SingleSourceValueSource extends GraphValueSource {
             if (firstAuthor == null) {
                 firstAuthor = userNode;
             }
-            float[] measure = userNode.getMeasure(measureCalculator);
-            double[] pp = new double[measure.length];
-            for (int i = 0; i < measure.length; i++) {
-                pp[i] = measure[i];
-            }
+            float measure = userNode.getMeasure(measureCalculator);
+            double[] pp = new double[]{measure};
             finalScores.put(userNode, pp);
             if (mergeStrategy.equals(GraphValueSource.ScoreMergeStrategy.FIRST_ONLY)) {
                 break;

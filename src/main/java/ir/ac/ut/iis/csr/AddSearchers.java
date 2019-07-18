@@ -5,14 +5,13 @@
  */
 package ir.ac.ut.iis.csr;
 
+import ir.ac.ut.iis.person.paper.PapersRetriever;
 import ir.ac.ut.iis.csr.algorithms.aggregate.CSRValueSource;
-import ir.ac.ut.iis.csr.algorithms.aggregate.PPRValueSource;
 import ir.ac.ut.iis.person.Configs;
 import ir.ac.ut.iis.person.DatasetMain;
 import static ir.ac.ut.iis.person.Main.outputPath;
 import static ir.ac.ut.iis.person.Main.retriever;
 import ir.ac.ut.iis.person.algorithms.aggregate.AggregateSearcher;
-import ir.ac.ut.iis.person.algorithms.aggregate.MyValueSource;
 import ir.ac.ut.iis.person.algorithms.social_textual.citeseerx.CiteseerxSocialTextualValueSource;
 import ir.ac.ut.iis.person.hierarchy.Hierarchy;
 import ir.ac.ut.iis.csr.csr.CSRSimilarityTotalLevel;
@@ -20,6 +19,7 @@ import ir.ac.ut.iis.csr.social_influence.SocialInfluenceValueSource;
 import ir.ac.ut.iis.person.algorithms.campos.IRR;
 import ir.ac.ut.iis.person.algorithms.queries.MyLMQuery;
 import ir.ac.ut.iis.person.algorithms.searchers.BasicSearcher;
+import ir.ac.ut.iis.person.hierarchy.GraphNode;
 import ir.ac.ut.iis.person.myretrieval.MyDummySimilarity;
 import ir.ac.ut.iis.person.query.NormalizedQueryExpander;
 import ir.ac.ut.iis.person.query.QueryConverter;
@@ -67,24 +67,101 @@ public class AddSearchers {
     private static void addClusterBasedDefaultSearchers(CSRSimilarityTotalLevel hs) {
         final float personalizationWeight = 1f;
         Hierarchy<?> hier = DatasetMain.getInstance().getHierarchy();
-        MyValueSource myValueSource = new CSRValueSource(hier, hier.getNumberOfWeights() - 1, hs, 1, CSRValueSource.ScoreMergeStrategy.SUM);
-        retriever.addSearcher(new AggregateSearcher(myValueSource, DatasetMain.getInstance().getIndexSearcher(), "CSR-" + myValueSource.getName(), ir.ac.ut.iis.person.AddSearchers.getBaseSimilarity(), ir.ac.ut.iis.person.AddSearchers.getQueryConverter(), personalizationWeight, 1f));
+//          hier.getRootNode().loadSelfPPRs("Self_CSR_minimal.txt");
+//        hier.getRootNode().loadPPRs("CSRs_minimal.txt", 0);
+//        hier.getRootNode().injectDummyValues(100);
+//      CSRValueSource myValueSource = new CSRValueSource(hier, hier.getNumberOfWeights() - 1, hs, 1, CSRValueSource.ScoreMergeStrategy.SUM);
+//        retriever.addSearcher(new AggregateSearcher(myValueSource, DatasetMain.getInstance().getIndexSearcher(), "CSR-" + myValueSource.getName(), ir.ac.ut.iis.person.AddSearchers.getBaseSimilarity(), ir.ac.ut.iis.person.AddSearchers.getQueryConverter(), personalizationWeight, 1f));
+//
 
-        Hierarchy<?> hier2 = DatasetMain.getInstance().loadHierarchy(Configs.datasetRoot + Configs.graphFile, Configs.datasetRoot + "clusters/" + Configs.clustersFileName + ".tree", Configs.clustersFileName, false, false, false, false);
-        PPRValueSource pprValueSource = new PPRValueSource(hier2, hier2.getNumberOfWeights() - 1, CSRValueSource.ScoreMergeStrategy.SUM, Configs.pagerankAlpha);
-        retriever.addSearcher(new AggregateSearcher(pprValueSource, DatasetMain.getInstance().getIndexSearcher(), "PPR-" + pprValueSource.getName(), ir.ac.ut.iis.person.AddSearchers.getBaseSimilarity(), ir.ac.ut.iis.person.AddSearchers.getQueryConverter(), personalizationWeight, 1f));
-
-        Hierarchy<?> hier3 = DatasetMain.getInstance().loadHierarchy(Configs.datasetRoot + Configs.graphFile, Configs.datasetRoot + "clusters/" + Configs.clustersFileName + ".tree", Configs.clustersFileName, false, true, false, false);
-        myValueSource = new CSRValueSource(hier3, hier3.getNumberOfWeights() - 1, hs, 1, CSRValueSource.ScoreMergeStrategy.SUM);
-        retriever.addSearcher(new AggregateSearcher(myValueSource, DatasetMain.getInstance().getIndexSearcher(), "P-CSR-" + myValueSource.getName(), ir.ac.ut.iis.person.AddSearchers.getBaseSimilarity(), ir.ac.ut.iis.person.AddSearchers.getQueryConverter(), personalizationWeight, 1f));
-
-        Hierarchy<?> hier4 = DatasetMain.getInstance().loadHierarchy(Configs.datasetRoot + Configs.graphFile, Configs.datasetRoot + "clusters/" + Configs.clustersFileName + ".tree", Configs.clustersFileName, false, false, true, false);
-        myValueSource = new CSRValueSource(hier4, hier4.getNumberOfWeights() - 1, hs, 1, CSRValueSource.ScoreMergeStrategy.SUM);
-        retriever.addSearcher(new AggregateSearcher(myValueSource, DatasetMain.getInstance().getIndexSearcher(), "CSR_Part-" + myValueSource.getName(), ir.ac.ut.iis.person.AddSearchers.getBaseSimilarity(), ir.ac.ut.iis.person.AddSearchers.getQueryConverter(), personalizationWeight, 1f));
-
-        Hierarchy<?> hier5 = DatasetMain.getInstance().loadHierarchy(Configs.datasetRoot + Configs.graphFile, Configs.datasetRoot + "clusters/" + Configs.clustersFileName + ".tree", Configs.clustersFileName, false, true, true, false);
-        myValueSource = new CSRValueSource(hier5, hier5.getNumberOfWeights() - 1, hs, 1, CSRValueSource.ScoreMergeStrategy.SUM);
-        retriever.addSearcher(new AggregateSearcher(myValueSource, DatasetMain.getInstance().getIndexSearcher(), "P-CSR_Part-" + myValueSource.getName(), ir.ac.ut.iis.person.AddSearchers.getBaseSimilarity(), ir.ac.ut.iis.person.AddSearchers.getQueryConverter(), personalizationWeight, 1f));
+//        Hierarchy<?> hier2 = DatasetMain.getInstance().loadHierarchy(Configs.datasetRoot + Configs.graphFile, Configs.datasetRoot + "clusters/" + Configs.clustersFileName + ".tree", Configs.clustersFileName, false, false, false, false);
+//        PPRValueSource pprValueSource = new PPRValueSource(hier2, hier2.getNumberOfWeights() - 1, CSRValueSource.ScoreMergeStrategy.SUM, Configs.pagerankAlpha);
+//        retriever.addSearcher(new AggregateSearcher(pprValueSource, DatasetMain.getInstance().getIndexSearcher(), "PPR-" + pprValueSource.getName(), ir.ac.ut.iis.person.AddSearchers.getBaseSimilarity(), ir.ac.ut.iis.person.AddSearchers.getQueryConverter(), personalizationWeight, 1f));
+//        Hierarchy<?> hier3 = DatasetMain.getInstance().loadHierarchy(Configs.datasetRoot + Configs.graphFile, Configs.datasetRoot + "clusters/" + Configs.clustersFileName + ".tree", Configs.clustersFileName, false, false, false, false);
+//        {        
+//        Map<Integer, Integer> map = new HashMap<>();
+//        for (GraphNode g : hier3.getRootNode().getUsers()) {
+//            if (g.getHierarchyNode().getParent().getChildren().size() > 5000) {
+//                if (!map.containsKey(g.getHierarchyNode().getParent().getId())) {
+//                    System.out.println(g.getHierarchyNode().getParent().getId() + " " + g.getHierarchyNode().getParent().usersNum() + " " + g.getHierarchyNode().getParent().getChildren().size());
+//                }
+//            }
+//            map.putIfAbsent(g.getHierarchyNode().getParent().getId(), g.getHierarchyNode().getParent().getChildren().size());
+//        }
+//        Map<Integer, Integer> sortByValue = StopWordsExtractor.MapUtil.sortByValue(map);
+//        for (var e : sortByValue.entrySet()) {
+//            if (e.getValue() > 1000) {
+//                System.out.println(e.getValue() + " " + e.getKey());
+//            }
+//        }
+//        }
+//        Hierarchy<?> hier3 = DatasetMain.getInstance().loadHierarchy(Configs.datasetRoot + Configs.graphFile, Configs.datasetRoot + "clusters/" + Configs.clustersFileName + ".tree", Configs.clustersFileName, false, true, false, false);
+//        for (var c : hier3.getRootNode().getChildren().values()) {
+//            System.out.println("size: " + c.usersNum());
+//        }
+//        System.exit(0);
+//
+        int ok = 0;
+        int nok = 0;
+        for (GraphNode u : hier.getUserNodeMapping().values()) {
+            boolean check = true;
+            if (PapersRetriever.checkBalanceness(u)) {
+                ok++;
+            } else {
+                nok++;
+            }
+        }
+        System.out.println(ok + " " + nok);
+        System.exit(0);
+//        try {
+//            HierarchyNode.pprOSW = new OutputStreamWriter(new BufferedOutputStream(new FileOutputStream("CSRs_minimal.txt")));
+//        } catch (FileNotFoundException ex) {
+//            Logger.getLogger(AddSearchers.class.getName()).log(Level.SEVERE, null, ex);
+//        }
+//
+//        Iterable<GraphNode> users = hier.getRootNode().getUsers();
+//        List<GraphNode> list = new ArrayList<>();
+//        for (int i = 0; i < 100; i++) {
+//            Integer random = ir.ac.ut.iis.person.Main.random(hier.getRootNode().usersNum());
+//            Iterator<GraphNode> iterator = users.iterator();
+//            for (int j = 0; j < random; j++) {
+//                iterator.next();
+//            }
+//            list.add(iterator.next());
+//        }
+//        long millis1 = System.currentTimeMillis();
+//        hier.getRootNode().precompute(0, 0, Configs.pagerankAlpha);
+//        hier3.getRootNode().precomputePPRs(Configs.pagerankAlpha, list);
+//        try {
+//            HierarchyNode.pprOSW.close();
+//        } catch (IOException ex) {
+//            Logger.getLogger(AddSearchers.class.getName()).log(Level.SEVERE, null, ex);
+//        }
+//        long millis2 = System.currentTimeMillis();
+////
+//        System.out.println("userPPRCount: " + HierarchyNode.userPPRCount);
+//        System.out.println("selfPPRCount: " + HierarchyNode.selfPPRCount);
+//        System.out.println("millis1: " + millis1);
+//        System.out.println("millis2: " + millis2);
+//        System.exit(0);
+//        hier3.getRootNode().loadSelfPPRs("Self_kol.txt");
+//        hier3.getRootNode().loadPPRs("PPRs.txt", 5000);
+//        hier3.getRootNode().loadSelfPPRs("Self_minimal.txt");
+//        hier3.getRootNode().loadPPRs("PPRs_minimal.txt", -1);
+//        hier3.getRootNode().injectDummyValues(100);
+//        PPRLoader.extractMinimalPPRs(hier3,"PPRs_kol.txt", "PPR_minimal.txt" );
+//        PPRLoader.extractSelfPPRs(hier, "CSRs_minimal.txt", "Self_CSR_minimal.txt");
+//        PPRLoader.addToDatabase(hier3, "PPRs.txt", 6000);
+//        System.exit(0);
+//        CSRValueSource myValueSource = new CSRValueSource(hier3, hier3.getNumberOfWeights() - 1, hs, 1, CSRValueSource.ScoreMergeStrategy.SUM);
+//        retriever.addSearcher(new AggregateSearcher(myValueSource, DatasetMain.getInstance().getIndexSearcher(), "P-CSR-" + myValueSource.getName(), ir.ac.ut.iis.person.AddSearchers.getBaseSimilarity(), ir.ac.ut.iis.person.AddSearchers.getQueryConverter(), personalizationWeight, 1f));
+//        Hierarchy<?> hier4 = DatasetMain.getInstance().loadHierarchy(Configs.datasetRoot + Configs.graphFile, Configs.datasetRoot + "clusters/" + Configs.clustersFileName + ".tree", Configs.clustersFileName, false, false, true, false);
+//        myValueSource = new CSRValueSource(hier4, hier4.getNumberOfWeights() - 1, hs, 1, CSRValueSource.ScoreMergeStrategy.SUM);
+//        retriever.addSearcher(new AggregateSearcher(myValueSource, DatasetMain.getInstance().getIndexSearcher(), "CSR_Part-" + myValueSource.getName(), ir.ac.ut.iis.person.AddSearchers.getBaseSimilarity(), ir.ac.ut.iis.person.AddSearchers.getQueryConverter(), personalizationWeight, 1f));
+//
+//        Hierarchy<?> hier5 = DatasetMain.getInstance().loadHierarchy(Configs.datasetRoot + Configs.graphFile, Configs.datasetRoot + "clusters/" + Configs.clustersFileName + ".tree", Configs.clustersFileName, false, true, true, false);
+//        myValueSource = new CSRValueSource(hier5, hier5.getNumberOfWeights() - 1, hs, 1, CSRValueSource.ScoreMergeStrategy.SUM);
+//        retriever.addSearcher(new AggregateSearcher(myValueSource, DatasetMain.getInstance().getIndexSearcher(), "P-CSR_Part-" + myValueSource.getName(), ir.ac.ut.iis.person.AddSearchers.getBaseSimilarity(), ir.ac.ut.iis.person.AddSearchers.getQueryConverter(), personalizationWeight, 1f));
     }
 
     public static void addAggregateSearchersParameterTuning() {

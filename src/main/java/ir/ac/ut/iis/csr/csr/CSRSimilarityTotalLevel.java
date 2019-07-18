@@ -26,6 +26,7 @@ import java.util.TreeSet;
 public class CSRSimilarityTotalLevel {
 
     private final double pageRankAlpha;
+    public Map<Integer, Map<Integer, Float>> map;
 
     public CSRSimilarityTotalLevel() {
         this(Configs.pagerankAlpha);
@@ -62,55 +63,58 @@ public class CSRSimilarityTotalLevel {
      * @param priorId
      * @return
      */
-    public double[] CSR(HierarchyNode currentNode, GraphNode searcher, Map<GraphNode, double[]> publishers, Map<GraphNode, double[]> finalScores, Map<Integer, float[]> priors, Integer priorId) {
+    public void CSR(HierarchyNode currentNode, GraphNode searcher, Map<GraphNode, Double> publishers, Map<GraphNode, Double> finalScores, Map<Integer, float[]> priors, Integer priorId) {
         NextNodeResult nextLevel = nextNode(currentNode, publishers.keySet(), searcher.getHierarchyNode());
         HierarchyNode nextNode = currentNode.getChild(searcher);
 
         double[] total = new double[currentNode.getNumberOfWeights()];
         for (GraphNode notContained : nextLevel.notContained) {
-            double[] totalUserProb = publishers.get(notContained);
+            double totalUserProb = publishers.get(notContained);
             if (nextNode != null) {
-                final float[] selfPPR = currentNode.selfPPR(makePPRCalculator(priors, priorId, currentNode), pageRankAlpha);
-                final float[] userPPR = nextNode.userPPR(makePPRCalculator(priors, priorId, nextNode), pageRankAlpha, notContained);
-//                System.out.println("UserPPR: " + nextNode.getId() + " " + notContained.getId().getId() + ": " + userPPR[0]);
+                final float selfPPR = currentNode.selfPPR(makePPRCalculator(priors, priorId, currentNode), pageRankAlpha);
+                float userPPR = -1;
+                if (map != null) {
+                    final Float val = map.get(notContained.getId().getId()).get(nextNode.getId());
+                    if (val != null) {
+                        userPPR = val;
+                    }
+                }
+                if (userPPR == -1) {
+                    userPPR = nextNode.userPPR(makePPRCalculator(priors, priorId, nextNode), pageRankAlpha, notContained);
+                }
 
-                for (int t = 0; t < totalUserProb.length; t++) {
-                    totalUserProb[t] += Math.log(selfPPR[t]) + Math.log(userPPR[t]);
-                }
+//                System.out.println("UserPPR: " + nextNode.getId() + " " + notContained.getId().getId() + ": " + userPPR[0]);
+                totalUserProb += Math.log(selfPPR) + Math.log(userPPR);
             } else {
-                final float[] userPPR = currentNode.userPPR(makePPRCalculator(priors, priorId, currentNode), pageRankAlpha, notContained);
-//                System.out.println("UserPPR: " + currentNode.getId() + " " + notContained.getId().getId() + ": " + userPPR[0]);
-                for (int t = 0; t < totalUserProb.length; t++) {
-                    totalUserProb[t] += Math.log(userPPR[t]);
+                float userPPR = -1;
+                if (map != null) {
+                    final Float val = map.get(notContained.getId().getId()).get(currentNode.getId());
+                    if (val != null) {
+                        userPPR = val;
+                    }
                 }
+                if (userPPR == -1) {
+                    userPPR = currentNode.userPPR(makePPRCalculator(priors, priorId, currentNode), pageRankAlpha, notContained);
+                }
+//                System.out.println("UserPPR: " + currentNode.getId() + " " + notContained.getId().getId() + ": " + userPPR[0]);
+                totalUserProb += Math.log(userPPR);
             }
             publishers.put(notContained, totalUserProb);
-            double[] finalScore = new double[totalUserProb.length];
-            for (int t = 0; t < totalUserProb.length; t++) {
-                finalScore[t] = Math.pow(Math.E, totalUserProb[t]);
-                total[t] += finalScore[t];
-            }
-            finalScores.put(notContained, finalScore);
+            finalScores.put(notContained, Math.pow(Math.E, totalUserProb));
         }
         if (nextLevel.contained.isEmpty()) {
-            return total;
+            return;
         }
 
-        Map<GraphNode, double[]> containedPublishers = new HashMap<>();
+        Map<GraphNode, Double> containedPublishers = new HashMap<>();
         for (GraphNode contained : nextLevel.contained) {
-            final double[] get = publishers.get(contained);
-            final float[] selfPPR = currentNode.selfPPR(makePPRCalculator(priors, priorId, currentNode), pageRankAlpha);
-            double[] sc = new double[currentNode.getNumberOfWeights()];
-            for (int t = 0; t < sc.length; t++) {
-                sc[t] = get[t] + Math.log(selfPPR[t]);
-            }
+            final double get = publishers.get(contained);
+            final float selfPPR = currentNode.selfPPR(makePPRCalculator(priors, priorId, currentNode), pageRankAlpha);
+            double sc;
+            sc = get + Math.log(selfPPR);
             containedPublishers.put(contained, sc);
         }
-        final double[] CSR = this.CSR(nextNode, searcher, containedPublishers, finalScores, priors, priorId);
-        for (int t = 0; t < total.length; t++) {
-            CSR[t] += total[t];
-        }
-        return CSR;
+        this.CSR(nextNode, searcher, containedPublishers, finalScores, priors, priorId);
     }
 
     protected PPRCalculator makePPRCalculator(Map<Integer, float[]> priors, int priorId, HierarchyNode currentNode) {
@@ -119,6 +123,10 @@ public class CSRSimilarityTotalLevel {
             pprCalculator = new ConstantVectorPPR(currentNode.getId(), currentNode.getNumberOfWeights(), priorId, currentNode.getUsers(), priors, pageRankAlpha);
         }
         return pprCalculator;
+    }
+
+    public double getPageRankAlpha() {
+        return pageRankAlpha;
     }
 
     public static class NextNodeResult {
