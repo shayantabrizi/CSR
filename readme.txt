@@ -3,7 +3,7 @@
 Personalized IR based with Cluster-Sensitive Rank (CSR)
 
 Based on article [Inspiring Search Personalization in Social Networks by Real-World Information Search]
-Version: performance-test-1.0
+Version: 1.0-performance-test
 
 -----------------------------------------------------------------------------
 

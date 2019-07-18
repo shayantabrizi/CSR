@@ -3,13 +3,13 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>ir.ac.ut.iis</groupId>
     <artifactId>CSR</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0-performance-test-SNAPSHOT</version>
     <packaging>jar</packaging>
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>PERSON</artifactId>
-            <version>2.0-SNAPSHOT</version>
+            <version>2.0-performance-test-SNAPSHOT</version>
         </dependency>
     </dependencies>
     <properties>
