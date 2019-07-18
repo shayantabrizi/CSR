@@ -95,24 +95,23 @@ public class AddSearchers {
 //            }
 //        }
 //        }
-//        Hierarchy<?> hier3 = DatasetMain.getInstance().loadHierarchy(Configs.datasetRoot + Configs.graphFile, Configs.datasetRoot + "clusters/" + Configs.clustersFileName + ".tree", Configs.clustersFileName, false, true, false, false);
+        Hierarchy<?> hier3 = DatasetMain.getInstance().loadHierarchy(Configs.datasetRoot + Configs.graphFile, Configs.datasetRoot + "clusters/" + Configs.clustersFileName + ".tree", Configs.clustersFileName, false, true, false, false);
 //        for (var c : hier3.getRootNode().getChildren().values()) {
 //            System.out.println("size: " + c.usersNum());
 //        }
 //        System.exit(0);
 //
-        int ok = 0;
-        int nok = 0;
-        for (GraphNode u : hier.getUserNodeMapping().values()) {
-            boolean check = true;
-            if (PapersRetriever.checkBalanceness(u)) {
-                ok++;
-            } else {
-                nok++;
-            }
-        }
-        System.out.println(ok + " " + nok);
-        System.exit(0);
+//        int ok = 0;
+//        int nok = 0;
+//        for (GraphNode u : hier.getUserNodeMapping().values()) {
+//            boolean check = true;
+//            if (PapersRetriever.checkBalanceness(u)) {
+//                ok++;
+//            } else {
+//                nok++;
+//            }
+//        }
+//        System.out.println(ok + " " + nok);
 //        try {
 //            HierarchyNode.pprOSW = new OutputStreamWriter(new BufferedOutputStream(new FileOutputStream("CSRs_minimal.txt")));
 //        } catch (FileNotFoundException ex) {
@@ -153,8 +152,8 @@ public class AddSearchers {
 //        PPRLoader.extractSelfPPRs(hier, "CSRs_minimal.txt", "Self_CSR_minimal.txt");
 //        PPRLoader.addToDatabase(hier3, "PPRs.txt", 6000);
 //        System.exit(0);
-//        CSRValueSource myValueSource = new CSRValueSource(hier3, hier3.getNumberOfWeights() - 1, hs, 1, CSRValueSource.ScoreMergeStrategy.SUM);
-//        retriever.addSearcher(new AggregateSearcher(myValueSource, DatasetMain.getInstance().getIndexSearcher(), "P-CSR-" + myValueSource.getName(), ir.ac.ut.iis.person.AddSearchers.getBaseSimilarity(), ir.ac.ut.iis.person.AddSearchers.getQueryConverter(), personalizationWeight, 1f));
+        CSRValueSource myValueSource = new CSRValueSource(hier3, hier3.getNumberOfWeights() - 1, hs, 1, CSRValueSource.ScoreMergeStrategy.SUM);
+        retriever.addSearcher(new AggregateSearcher(myValueSource, DatasetMain.getInstance().getIndexSearcher(), "P-CSR-" + myValueSource.getName(), ir.ac.ut.iis.person.AddSearchers.getBaseSimilarity(), ir.ac.ut.iis.person.AddSearchers.getQueryConverter(), personalizationWeight, 1f));
 //        Hierarchy<?> hier4 = DatasetMain.getInstance().loadHierarchy(Configs.datasetRoot + Configs.graphFile, Configs.datasetRoot + "clusters/" + Configs.clustersFileName + ".tree", Configs.clustersFileName, false, false, true, false);
 //        myValueSource = new CSRValueSource(hier4, hier4.getNumberOfWeights() - 1, hs, 1, CSRValueSource.ScoreMergeStrategy.SUM);
 //        retriever.addSearcher(new AggregateSearcher(myValueSource, DatasetMain.getInstance().getIndexSearcher(), "CSR_Part-" + myValueSource.getName(), ir.ac.ut.iis.person.AddSearchers.getBaseSimilarity(), ir.ac.ut.iis.person.AddSearchers.getQueryConverter(), personalizationWeight, 1f));
